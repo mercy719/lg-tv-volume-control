@@ -1,4 +1,4 @@
-# lgtv-mac-volume
+# LG TV Volume Control
 
 Use your Mac keyboard's volume keys (🔉 🔊 🔇) to control the **real volume of an LG webOS TV** when the TV is your Mac's display / sound output over HDMI.
 
@@ -24,8 +24,8 @@ volume key ─▶ Hammerspoon (output is "LG TV"?) ─▶ http://127.0.0.1:18765
 ## Install
 
 ```bash
-git clone https://github.com/mercy719/lgtv-mac-volume.git
-cd lgtv-mac-volume
+git clone https://github.com/mercy719/lg-tv-volume-control.git
+cd lg-tv-volume-control
 ./install.sh 192.168.1.50      # your TV's IP
 ```
 
