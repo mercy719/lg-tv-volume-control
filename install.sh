@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install lgtv_volumed as a LaunchAgent and the Hammerspoon module.
+# Install lgtv_volumed, its watchdog and the Hammerspoon module.
 #   ./install.sh 192.168.1.50
 set -euo pipefail
 
@@ -11,9 +11,14 @@ DATA="$HOME/.local/share/lgtv-volumed"
 LABEL="io.github.lgtv-volumed"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG="$HOME/Library/Logs/lgtv-volumed.log"
+WATCHDOG_LABEL="$LABEL.watchdog"
+WATCHDOG_PLIST="$HOME/Library/LaunchAgents/$WATCHDOG_LABEL.plist"
+WATCHDOG_LOG="$HOME/Library/Logs/lgtv-volumed-watchdog.log"
 
 mkdir -p "$DATA"
 cp "$REPO/lgtv_volumed.py" "$DATA/"
+cp "$REPO/watchdog.sh" "$DATA/"
+chmod 755 "$DATA/watchdog.sh"
 
 # The venv must be based on Apple's /usr/bin/python3: other Python builds (uv, pyenv, Homebrew)
 # are blocked by the macOS "Local Network" permission and fail with "Errno 65 No route to host".
@@ -45,6 +50,29 @@ cat > "$PLIST" <<EOF
 EOF
 launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
+
+cat > "$WATCHDOG_PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$WATCHDOG_LABEL</string>
+  <key>ProgramArguments</key><array>
+    <string>/bin/bash</string>
+    <string>$DATA/watchdog.sh</string>
+    <string>$TV_IP</string>
+    <string>$LABEL</string>
+    <string>http://127.0.0.1:18765/status</string>
+    <string>$DATA/watchdog</string>
+  </array>
+  <key>StartInterval</key><integer>15</integer>
+  <key>RunAtLoad</key><true/>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>$WATCHDOG_LOG</string>
+  <key>StandardErrorPath</key><string>$WATCHDOG_LOG</string>
+</dict></plist>
+EOF
+launchctl bootout "gui/$(id -u)/$WATCHDOG_LABEL" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$WATCHDOG_PLIST"
 
 mkdir -p "$HOME/.hammerspoon"
 cp "$REPO/hammerspoon/lgtv_volume.lua" "$HOME/.hammerspoon/"
